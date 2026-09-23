@@ -1,0 +1,11 @@
+matplotlib
+mediapipe
+numpy
+opencv-python
+still_alive
+tqdm
+ultralytics
+#--extra-index-url https://download.pytorch.org/whl/cu132
+#--extra-index-url https://download.pytorch.org/whl/rocm7.2
+torch
+torchvision
