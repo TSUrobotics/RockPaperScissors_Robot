@@ -7,17 +7,6 @@ import torch
 import torchvision.transforms as transforms
 from ultralytics import YOLO
 
-def quick_check(results):
-    for result in results:
-        # Bounding boxes (xyxy format)
-        boxes = result.boxes.xyxy
-        # Class IDs
-        class_ids = result.boxes.cls
-        # Confidence scores
-        confidences = result.boxes.conf
-        # Class names using model's names attribute
-        class_names = [result.names[int(c)] for c in result.boxes.cls]
-
 def main():
     args = set_args()
 
@@ -42,11 +31,6 @@ def main():
     model = YOLO()
 
     model.load(args.ckpt)
-
-    quick_check(model("rock.jpeg"))
-    quick_check(model("paper.jpeg"))
-    quick_check(model("scissors.jpeg"))
-
 
     if args.camera:
         run_camera(model, cfg['names'], device, transform, args.camera, args.width, args.height)
