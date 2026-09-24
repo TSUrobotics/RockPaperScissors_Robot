@@ -59,4 +59,4 @@ To check the YOLO model results, run the follwing program:
 python yolo_checker.py --data $DATA --ckpt $CKPT --camera $CAMERA --width $WIDTH --height $HEIGHT
 ```
 
-where `$DATA` is the YOLO yaml file describing the dataset, `$CKPT` is the path to the trained YOLO model weight, `$CAMERA` an integer that is the index of the video device to be used, `$WIDTH` is an integer that is the width of the camera feed in pixels, `$HEIGHT` is an integer that is the height of the camera feed in pixels, 
+where `$DATA` is the YOLO yaml file describing the dataset, `$CKPT` is the path to the trained YOLO model weight, `$CAMERA` an integer that is the index of the video device to be used, `$WIDTH` is an integer that is the width of the camera feed in pixels, `$HEIGHT` is an integer that is the height of the camera feed in pixels.
