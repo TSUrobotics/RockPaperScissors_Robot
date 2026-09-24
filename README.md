@@ -41,6 +41,9 @@ where `$FRAMES` is the directory holding the video frames, `$LABELS` is the dire
 
 The directory structure is in YOLO format.
 
+> [!NOTE]
+> If you are using a pre-labeled dataset, you start from **4. Model Training**.
+
 ## 4. Model Training
 
 To train the YOLO model, run the following program:
