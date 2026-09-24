@@ -46,8 +46,10 @@ The directory structure is in YOLO format.
 To train the YOLO model, run the following program:
 
 ```bash
-python yolo_trainer.py
+python yolo_trainer.py --data $DATA --ckpt $CKPT
 ```
+
+where `$DATA` is the YOLO yaml file describing the dataset and `$CKPT` is the path to the downloaded pretrained YOLO model size (i.e. `yolo26n.pt`, `yolo26m.pt`, `yolo26l.pt`, etc).
 
 ## 5. Model Checking
 
@@ -57,4 +59,4 @@ To check the YOLO model results, run the follwing program:
 python yolo_checker.py --data $DATA --ckpt $CKPT --camera $CAMERA --width $WIDTH --height $HEIGHT
 ```
 
-where `$DATA` is the YOLO yaml file describing the dataset, `$CPKT` is the path to the trained YOLO model weight, `$CAMERA` an integer that is the index of the video device to be used, `$WIDTH` is an integer that is the width of the camera feed in pixels, `$HEIGHT` is an integer that is the height of the camera feed in pixels, 
+where `$DATA` is the YOLO yaml file describing the dataset, `$CKPT` is the path to the trained YOLO model weight, `$CAMERA` an integer that is the index of the video device to be used, `$WIDTH` is an integer that is the width of the camera feed in pixels, `$HEIGHT` is an integer that is the height of the camera feed in pixels, 
