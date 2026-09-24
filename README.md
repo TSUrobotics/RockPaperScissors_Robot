@@ -1,5 +1,8 @@
 # Rock, Paper, Scissors Gesture Recognition
 
+> [!NOTE]
+> If you are using a pre-labeled dataset, you start from **4. Model Training**.
+
 ## 1. Automatic Frame Extraction from Video File
 
 To automatically extract frames from a video file, run the script:
@@ -40,9 +43,6 @@ python split.py --src_images $FRAMES --src_labels $LABELS --split $SPLIT --out $
 where `$FRAMES` is the directory holding the video frames, `$LABELS` is the directory holding the corresponding labels, `$SPLIT` is a float inclusively between $0$ and $1$, `$IMAGES` is the directory where the selected training, testing, and valid images and labels will be copied to.
 
 The directory structure is in YOLO format.
-
-> [!NOTE]
-> If you are using a pre-labeled dataset, you start from **4. Model Training**.
 
 ## 4. Model Training
 
