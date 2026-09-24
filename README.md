@@ -1,7 +1,7 @@
 # Rock, Paper, Scissors Gesture Recognition
 
 > [!NOTE]
-> If you are using a pre-labeled dataset, you start from **4. Model Training**.
+> If you are using a pre-labeled dataset, you start from [**4. Model Training**](https://github.com/TSUrobotics/RockPaperScissors_Robot#4-model-training).
 
 ## 1. Automatic Frame Extraction from Video File
 
