@@ -16,6 +16,10 @@ To detect and label the gestures automatically, run the following program:
 
 > [!NOTE]
 > Be sure to install the required Python modules from `requirements.txt`, either in a `venv` or globally, before running the following programs.
+>
+> You will also need `gesture_recognizer.task` from [this link](https://developers.google.com/edge/mediapipe/solutions/vision/gesture_recognizer#models).
+>
+> You can download it with `wget https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task`.
 
 ```bash
 python labeler_mediapipe.py --src $FRAMES --out $LABELS
