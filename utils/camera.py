@@ -90,8 +90,8 @@ def run_camera(model, class_names, device, transform,
                 confidence = 0.0
             
             # Safely get class name
-            #pred_name = class_names[pred_id] if pred_id != -1 and pred_id < len(class_names) else "Unknown"
-            pred_name = class_names[pred_id]
+            pred_name = class_names[pred_id] if 0 <= pred_id < len(class_names) else "Unknown"
+            #pred_name = class_names[pred_id]
 
         # Draw the prediction text (moved inside the if block from original code)
         cv2.putText(clone,
