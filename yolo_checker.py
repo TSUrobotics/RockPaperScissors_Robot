@@ -13,14 +13,18 @@ def main():
     print("CUDA Available:", torch.cuda.is_available())
     print("Number of GPUs:", torch.cuda.device_count())
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif torch.xpu.is_available():
+        device = torch.device('xpu')
+    else:
+        device = torch.device('cpu')
 
     cfg = load_yaml_config(args.data)
 
     print(cfg)
 
-    #cfg_names = list(cfg['names'].values())
-    cfg_names = cfg['names']
+    cfg_names = list(cfg['names'])
 
     transform = transforms.Compose([
         transforms.Resize((32, 32)),
@@ -31,6 +35,10 @@ def main():
     model = YOLO()
 
     model.load(args.ckpt)
+
+    metrics = model.val(data=args.data)
+
+    print(metrics.confusion_matrix.matrix)
 
     if args.camera:
         run_camera(model, cfg['names'], device, transform, args.camera, args.width, args.height)
