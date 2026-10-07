@@ -10,7 +10,7 @@ def main():
 
     model = YOLO(args.ckpt)
 
-    model.train(data=args.data, epochs=300, device=device)
+    model.train(data=args.data, epochs=args.epochs, device=device)
 
 if __name__ == "__main__":
     main()
