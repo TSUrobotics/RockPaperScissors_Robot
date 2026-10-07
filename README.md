@@ -49,10 +49,10 @@ The directory structure is in YOLO format.
 To train the YOLO model, run the following program:
 
 ```bash
-python yolo_trainer.py --data $DATA --ckpt $CKPT
+python yolo_trainer.py --data $DATA --ckpt $CKPT --epochs $EPOCHS
 ```
 
-where `$DATA` is the YOLO yaml file describing the dataset and `$CKPT` is the path to the downloaded pretrained YOLO model size (i.e. `yolo26n.pt`, `yolo26m.pt`, `yolo26l.pt`, etc).
+where `$DATA` is the YOLO yaml file describing the dataset, `$CKPT` is the path to the downloaded pretrained YOLO model size (i.e. `yolo26n.pt`, `yolo26m.pt`, `yolo26l.pt`, etc), and `$EPOCHS` is the number of epochs to train the model with.
 
 ## 5. Model Checking
 
@@ -63,3 +63,14 @@ python yolo_checker.py --data $DATA --ckpt $CKPT --camera $CAMERA --width $WIDTH
 ```
 
 where `$DATA` is the YOLO yaml file describing the dataset, `$CKPT` is the path to the trained YOLO model weight, `$CAMERA` an integer that is the index of the video device to be used, `$WIDTH` is an integer that is the width of the camera feed in pixels, `$HEIGHT` is an integer that is the height of the camera feed in pixels.
+
+> [!NOTE]
+> weights for 120 images
+> 
+> yolo26m: rps/runs/detect/train-21
+>
+> yolo26l: rps/runs/detect/train-22
+>
+> yolo26x: rps/runs/detect/train-23
+>
+
