@@ -25,6 +25,12 @@ def set_args():
         help="YOLO model weights checkpoint."
     )
     parser.add_argument(
+        "--epochs", 
+        type=int, 
+        default=300,
+        help="Epochs for YOLO training."
+    )
+    parser.add_argument(
         "--camera",
         type=int,
         help="Video device to chose (Recommended: 3 → indices `ls /dev/video*`).",
