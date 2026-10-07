@@ -1,24 +1,16 @@
 from utils.arguments import set_args
 from utils.camera import run_camera
 from utils.get_paths import load_yaml_config
+from utils.get_torch_device import torch_device
 
 import argparse
-import torch
 import torchvision.transforms as transforms
 from ultralytics import YOLO
 
 def main():
     args = set_args()
 
-    print("CUDA Available:", torch.cuda.is_available())
-    print("Number of GPUs:", torch.cuda.device_count())
-
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif torch.xpu.is_available():
-        device = torch.device('xpu')
-    else:
-        device = torch.device('cpu')
+    device = torch_device()
 
     cfg = load_yaml_config(args.data)
 
