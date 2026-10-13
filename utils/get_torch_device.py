@@ -8,6 +8,8 @@ def torch_device():
         device = torch.device('cuda')
     elif torch.xpu.is_available():
         device = torch.device('xpu')
+    elif torch.mps.is_available():
+        device = torch.device('mps')
     else:
         device = torch.device('cpu')
 
