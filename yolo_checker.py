@@ -4,7 +4,6 @@ from utils.get_paths import load_yaml_config
 from utils.get_torch_device import torch_device
 
 import argparse
-import torchvision.transforms as transforms
 from ultralytics import YOLO
 
 def main():
@@ -12,28 +11,12 @@ def main():
 
     device = torch_device()
 
-    cfg = load_yaml_config(args.data)
-
-    print(cfg)
-
-    cfg_names = list(cfg['names'])
-
-    transform = transforms.Compose([
-        transforms.Resize((32, 32)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
-
-    model = YOLO()
-
-    model.load(args.ckpt)
-
-    metrics = model.val(data=args.data)
-
-    print(metrics.confusion_matrix.matrix)
+    model = YOLO(args.ckpt)
 
     if args.camera:
-        run_camera(model, cfg['names'], device, transform, args.camera, args.width, args.height)
+        run_camera(model, args.camera, args.width, args.height)
+    else:
+        print("Please give camera index, width, and height.")
 
 
 if __name__ == "__main__":
