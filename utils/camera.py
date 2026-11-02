@@ -1,4 +1,7 @@
+import time
+
 import cv2
+import numpy as np
 import torch
 from PIL import Image
 
@@ -10,7 +13,7 @@ def is_raspberry_pi():
         return False
 
 # Camera inference loop
-def segment(image, background, threshold=15):
+def segment(image, background, threshold=25):
     # Compute absolute difference between background and current frame
     diff = cv2.absdiff(background, image)
     # Threshold to get the foreground
@@ -25,108 +28,114 @@ def segment(image, background, threshold=15):
         segmented = max(cnts, key=cv2.contourArea)
         return (thresholded, segmented)
 
-def run_camera(model, class_names, device, transform,
+def run_camera(model,
                cam_index: int = 3,
                width: int = 640,
                height: int = 480) -> None:
-    # ROI Coordinates (top, right, bottom, left)
-    top, right, bottom, left = 10, 350, 225, 590
+    
+    PREDICT_EVERY = 10  # Run inference every N frames
 
-    # Normally, 0 for built-in webcam and 1&2 for external USB devices
+    YOLO_CONF_THRESHOLD = 0.4
+    YOLO_IOU_THRESHOLD = 0.45
+
+    # Open webcam
     cap = cv2.VideoCapture(cam_index)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,  width)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-    print("Press 's' to start, 'q' to quit.")
-
-    raspberry_pi = False
-    if is_raspberry_pi():
-        from utils.init_hand import create_hand
-        hand, gestures = create_hand()
-        raspberry_pi = True
-
-
-    last_pred = ""
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        frame = cv2.flip(frame, 1)
-        # Clone the frame so we can draw the box without affecting processing
-        clone = frame.copy()
+    # FPS tracking
+    process_fps = time.time()
+    frame_count = 0
+    display_fps = 0.0
     
-        keypress = cv2.waitKey(1) & 0xFF
+    # Store last prediction result to persist across frames
+    last_result = None
 
-        with torch.no_grad():
-            results = model.predict(
-                    source=frame, # We need the direct frame.
-                    device=device,
-                    )
-            res = results[0]  # Get the first result from the list
+    print("🎥 Press 'q' or 'ESC' to quit | YOLO Live Detection")
 
-            pred_id = -1
-            confidence = 0.0
-
-            # Extract prediction based on model type
-            if res.probs is not None:
-                # For Classification models (YOLOv8-cls)
-                # .probs is a Top1 object containing the index and confidence
-                #print(res.probs)
-                if res.probs is None:
-                    pred_id = -1
-                    confidence = 0
-                else:
-                    pred_id = int(res.probs.top1)
-                    confidence = float(res.probs.top1conf)
-            elif res.boxes is not None and len(res.boxes) > 0:
-                # For Detection models (YOLOv8-detect)
-                # Use the first detected box's class
-                pred_id = int(res.boxes.cls[0].item())
-                confidence = float(res.boxes.conf[0].item())
-            else:
-                # No detection/classification found
-                pred_id = -1
-                confidence = 0.0
-            
-            # Safely get class name
-            pred_name = class_names[pred_id] if 0 <= pred_id < len(class_names) else "Unknown"
-            #pred_name = class_names[pred_id]
-
-        # Draw the prediction text (moved inside the if block from original code)
-        cv2.putText(clone,
-                    f'{pred_name}: {confidence:.2f}',
-                    (right + 10, top + 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.8, (0, 255, 0), 2,
-                    cv2.LINE_AA)
-
-
-        if pred_name != last_pred:
-            print(f'Prediction: {pred_name}')
-            last_pred = pred_name
-        if raspberry_pi:
-            # Game Logic
-            match pred_name:
-                case 'Rock':
-                    hand.paper()
-                case 'Paper':
-                    hand.scissors()
-                case 'Scissors':
-                    hand.rock()
-
-        cv2.imshow('Prediction', res.plot())
-
-        # Draw the bounding box on the main display
-        #cv2.rectangle(clone, (left, top), (right, bottom), (0, 255, 0), 2)
-
-        cv2.imshow('Video Feed', clone)
-
-        if keypress == ord('q'):
+    while cap.isOpened():
+        success, frame = cap.read()
+        if not success:
+            print("⚠️ Failed to grab frame. Exiting.")
             break
 
+        # Mirror view for natural interaction
+        frame = cv2.flip(frame, 1)
+        
+        # Convert BGR → RGB (YOLO expects RGB)
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # YOLO Detection (every N frames)
+        frame_count += 1
+        if frame_count % PREDICT_EVERY == 0:
+            results = model(rgb_frame, conf=YOLO_CONF_THRESHOLD, iou=YOLO_IOU_THRESHOLD, verbose=False)
+            last_result = results[0]  # Store for persistence
+
+        # Draw stored result on every frame
+        if last_result is not None:
+            result = last_result
+
+            # Draw bounding boxes
+            for box in result.boxes:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                conf = float(box.conf[0])
+                cls_id = int(box.cls[0])
+                label = f"{model.names[cls_id]} {conf:.2f}"
+
+                # Draw rectangle
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                
+                # Draw label background
+                (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                cv2.rectangle(frame, (x1, y1 - 20), (x1 + w, y1), (0, 255, 0), -1)
+                
+                # Draw text
+                cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+
+            # Segmentation Masks
+            if hasattr(result, 'masks') and result.masks is not None:
+                masks = result.masks
+                colors = result.colors if hasattr(result, 'colors') else None
+
+                for i, mask in enumerate(masks.xy):
+                    mask_poly = np.array(mask, dtype=np.int32)
+                    # Pick a color for this mask
+                    if colors is not None and i < len(colors):
+                        # Convert RGB (from Ultralytics) → BGR (for OpenCV)
+                        color = tuple(int(c) for c in reversed(colors[i % len(colors)]))
+                    else:
+                        color = (int(np.random.randint(0, 255)),
+                                 int(np.random.randint(0, 255)),
+                                 int(np.random.randint(0, 255)))
+
+                    # Draw filled polygon with transparency
+                    overlay = frame.copy()
+                    cv2.fillPoly(overlay, [mask_poly], color)
+                    frame = cv2.addWeighted(overlay, 0.35, frame, 0.65, 0)
+
+                    # Optionally draw mask outline for crisp edges
+                    cv2.polylines(frame, [mask_poly], isClosed=True,
+                                  color=color, thickness=1)
+
+        # FPS Overlay
+        process_fps = time.time() - process_fps
+        if frame_count >= 30:
+            display_fps = int(frame_count / process_fps)
+            frame_count = 0
+            process_fps = 0.0
+
+        cv2.putText(frame, f"FPS: {display_fps}", (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(frame, "YOLO Detection", (10, 60),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+        # Display
+        cv2.imshow("YOLO Live Detection", frame)
+
+        # Exit on 'q' or 'ESC'
+        if cv2.waitKey(5) & 0xFF == 27:  # 27 = ESC
+            break
+
+    # Cleanup
     cap.release()
     cv2.destroyAllWindows()
-
-    if raspberry_pi:
-        hand.stop()
