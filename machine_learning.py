@@ -1,5 +1,5 @@
 from utils.arguments import set_args
-from utils.extract_features import init_landmark_model, extract_landmark_features
+from utils.extract_features import init_landmark_model, extract_rps_features
 from utils.get_paths import get_paths, load_yaml_config
 from utils.get_torch_device import torch_device
 from utils.YOLODatasetLoader import YOLODatasetLoader
@@ -12,13 +12,12 @@ from types import NoneType
 
 import cv2
 import matplotlib.pyplot as plt
-import mediapipe as mp
 import numpy as np
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
+# Note: ``mediapipe`` is imported inside ``utils.extract_features`` where the
+# modern *tasks* API is used.  Keeping the import here would be unnecessary
+# and could cause version conflicts, so it has been removed.
 
 from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay, classification_report, precision_score, recall_score, f1_score
 from sklearn.neighbors import KNeighborsClassifier
@@ -62,26 +61,38 @@ def main():
 
     landmark_model = init_landmark_model(model_path)
 
-    # --- Feature Extraction (unchanged from previous fix) ---
+    # --- Feature Extraction (10‑dimensional RPS vector) ---
+    # The ``extract_rps_features`` function implements the pipeline described
+    # in the ChatGPT instructions:
+    #   1️⃣ Compute five finger‑bending angles.
+    #   2️⃣ Compute five normalized fingertip‑to‑palm distances.
+    #   3️⃣ Return a compact ``(N, 10)`` feature matrix.
     X_train, y_train = [], []
     for imgs, lbls in train_loader:
-        x, y = extract_landmark_features(landmark_model, imgs, lbls)
-        X_train.append(x); y_train.append(y)
+        # ``imgs`` is a batch of tensors; the helper handles conversion to
+        # the format expected by MediaPipe.
+        x, y = extract_rps_features(landmark_model, imgs, lbls)
+        X_train.append(x)
+        y_train.append(y)
     X_train, y_train = np.vstack(X_train), np.concatenate(y_train)
 
     X_test, y_test = [], []
     for imgs, lbls in test_loader:
-        x, y = extract_landmark_features(landmark_model, imgs, lbls)
-        X_test.append(x); y_test.append(y)
+        x, y = extract_rps_features(landmark_model, imgs, lbls)
+        X_test.append(x)
+        y_test.append(y)
     X_test, y_test = np.vstack(X_test), np.concatenate(y_test)
 
+    # StandardScaler is advisable as finger angles and normalized distances have different scales
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
+    # Handle potential zero rows if no hand was detected in some frames
     valid_mask_train = np.any(X_train != 0, axis=1)
     valid_mask_test = np.any(X_test != 0, axis=1)
 
+    # Fill missing hands with median features for robustness
     median_feats = np.median(X_train[valid_mask_train], axis=0)
     X_train[~valid_mask_train] = median_feats
     X_test[~valid_mask_test] = median_feats
